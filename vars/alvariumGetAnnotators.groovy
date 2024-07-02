@@ -12,6 +12,8 @@ import org.apache.logging.log4j.Logger;
 import com.alvarium.SdkInfo;
 
 import com.alvarium.contracts.AnnotationType;
+import com.alvarium.contracts.LayerType;
+import com.alvarium.tag.TagWriter;
 
 import com.alvarium.annotators.Annotator;
 import com.alvarium.annotators.AnnotatorConfig;
@@ -35,6 +37,18 @@ def call(
     AnnotatorFactory annotatorFactory = new AnnotatorFactory();
     List<Annotator> annotators = []
     Map<String, Object> properties = new HashMap<String, Object>()
+
+    Map<LayerType, TagWriter> overrides = new HashMap<>();
+
+    overrides.put(LayerType.CiCd, new TagWriter() {
+        @Override
+        @NonCPS
+        String writeTag() {
+            return getCommitSha();
+        }
+    })
+
+    properties.put("tagWriterOverrides", overrides)
 
     for (annotatorKind in annotatorKinds) {
         Annotator annotator
@@ -118,4 +132,9 @@ def getAnnotatorConfig(sdkInfo, annotatorKind) {
                 }
         }
     }
+}
+
+@NonCPS
+def getCommitSha(){
+    return env.GIT_COMMIT
 }
